@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Document Q&A Chatbot</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🤖</text></svg>">
+</head>
+<body>
+  <main class="main">
+    <h1 class="page-title">Document Q&A Assistant</h1>
+    <p class="subtitle">Upload documents or connect to CMS, then ask questions about your content</p>
+    
+    <div class="features">
+      <div class="feature-card">
+        <h3>📄 Document Upload</h3>
+        <p>Support for PDF, DOCX, CSV, Excel, and text files</p>
+      </div>
+      <div class="feature-card">
+        <h3>🌐 CMS Integration</h3>
+        <p>Import content from your CMS with API authentication</p>
+      </div>
+      <div class="feature-card">
+        <h3>🔍 Smart Search</h3>
+        <p>AI-powered semantic search across all your content</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Chatbot mount point -->
+  <div id="chatbot"></div>
+
+  <div id="api-key-dialog" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 20px rgba(0,0,0,0.2); z-index: 1001;">
+    <h3>OpenAI API Key Required</h3>
+    <p>Please enter your OpenAI API key to enable AI-powered responses:</p>
+    <input type="password" id="api-key-input" placeholder="sk-..." style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px;">
+    <div style="display: flex; justify-content: space-between;">
+        <button onclick="document.getElementById('api-key-dialog').style.display = 'none'">Cancel</button>
+        <button onclick="saveApiKey()" style="background: #4f46e5; color: white; border: none; padding: 8px 16px; border-radius: 5px;">Save Key</button>
+    </div>
+</div>
+
+<script>
+function showApiKeyDialog() {
+    document.getElementById('api-key-dialog').style.display = 'block';
+}
+
+function saveApiKey() {
+    const key = document.getElementById('api-key-input').value;
+    if (key && key.startsWith('sk-')) {
+        fetch('/config/openai', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ api_key: key })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                document.getElementById('api-key-dialog').style.display = 'none';
+                alert('API key saved successfully!');
+                location.reload();
+            } else {
+                alert('Error saving API key: ' + data.message);
+            }
+        })
+        .catch(error => {
+            alert('Error saving API key: ' + error.message);
+        });
+    } else {
+        alert('Please enter a valid OpenAI API key (should start with sk-)');
+    }
+}
+
+// Check if we need to show the API key dialog on page load
+fetch('/health')
+    .then(response => response.json())
+    .then(data => {
+        if (!data.openai.configured || !data.openai.valid_format) {
+            setTimeout(showApiKeyDialog, 2000);
+        }
+    });
+</script>
+
+  <!-- Add defer attribute to ensure DOM is ready -->
+  <script src="chatbot.js" defer></script>
+</body>
+</html>
